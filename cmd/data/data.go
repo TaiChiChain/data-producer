@@ -27,7 +27,6 @@ func main() {
 
 	app.Commands = cli.Commands{
 		initCMD,
-		balanceCMD,
 		generateCMD,
 	}
 
