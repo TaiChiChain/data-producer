@@ -98,6 +98,7 @@ func createAndWriteAccounts(quantity, parallel int, path string) error {
 	wg.Add(parallel)
 	for i := 0; i < parallel; i++ {
 		go func(idx int) {
+			defer wg.Done()
 			var end int
 			if idx == parallel-1 {
 				end = quantity
@@ -121,7 +122,6 @@ func createAndWriteAccounts(quantity, parallel int, path string) error {
 					return
 				}
 			}
-			wg.Done()
 		}(i)
 	}
 	wg.Wait()

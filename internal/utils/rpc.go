@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -49,58 +48,6 @@ func InitClient(url string) error {
 		return err
 	}
 	nonce--
-	return nil
-}
-
-func TransferFromAdmin(key *ecdsa.PrivateKey) error {
-	adminKey, err := crypto.HexToECDSA(AdminPrivateKey)
-	if err != nil {
-		return err
-	}
-	to := crypto.PubkeyToAddress(key.PublicKey)
-	// 1 BXH
-	value := big.NewInt(1000000000000000000)
-	gasLimit := uint64(21000)
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return err
-	}
-	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		return err
-	}
-
-	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    atomic.AddUint64(&nonce, 1),
-		To:       &to,
-		Value:    value,
-		Gas:      gasLimit,
-		GasPrice: gasPrice,
-		Data:     []byte{},
-	})
-	signTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), adminKey)
-	if err != nil {
-		return err
-	}
-	err = client.SendTransaction(context.Background(), signTx)
-	if err != nil {
-		return err
-	}
-
-	hash := signTx.Hash()
-	err = retry.Retry(func(attempt uint) error {
-		receipt, err := client.TransactionReceipt(context.Background(), hash)
-		if err != nil {
-			return err
-		}
-		if receipt.Status != uint64(1) {
-			return fmt.Errorf("transfer from admin error")
-		}
-		return nil
-	}, strategy.Limit(3), strategy.Delay(time.Millisecond*500))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -184,7 +131,7 @@ func DeployContract() (string, error) {
 		}
 		address = receipt.ContractAddress.String()
 		return nil
-	}, strategy.Limit(3), strategy.Delay(time.Millisecond*500))
+	}, strategy.Limit(3), strategy.Delay(time.Millisecond*1000))
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +188,7 @@ func Store(address string, value uint64) error {
 			return fmt.Errorf("invoke contract store error")
 		}
 		return nil
-	}, strategy.Limit(3), strategy.Delay(time.Millisecond*500))
+	}, strategy.Limit(3), strategy.Delay(time.Millisecond*1000))
 	if err != nil {
 		return err
 	}

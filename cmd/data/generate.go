@@ -132,6 +132,7 @@ func generate(ctx *cli.Context, fn func(account string) (*model.EthReq, error)) 
 	lock := sync.Mutex{}
 	for i := 0; i < parallel; i++ {
 		go func(idx int) {
+			defer wg.Done()
 			var end int
 			if idx == parallel-1 {
 				end = quantity
@@ -143,14 +144,12 @@ func generate(ctx *cli.Context, fn func(account string) (*model.EthReq, error)) 
 				req, err := fn(accounts[j])
 				if err != nil {
 					fmt.Println(err)
-					wg.Done()
 					return
 				}
 				lock.Lock()
 				reqs = append(reqs, req)
 				lock.Unlock()
 			}
-			wg.Done()
 		}(i)
 	}
 	wg.Wait()
